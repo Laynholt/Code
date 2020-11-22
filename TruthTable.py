@@ -90,7 +90,7 @@ def remake_to_rev_pol_not(_string: str, _priorities: dict) -> str:
             stack.append(c)                         # То добавляем ее в стек
         elif len(stack) == 0 and c != ')':          # Иначе, это символ операции. Смотрим, пуст ли стек
             stack.append(c)                         # Если да, то добавляем символ без проверки
-        elif len(stack) != 0:                       # Если нет, то проверяем Тек > Верх на стеке
+        elif len(stack) != 0 and c != ')':                      # Если нет, то проверяем Тек > Верх на стеке
             last_in_stack = None if not stack else stack[-1]    # Если нет, то выводим все
             while get_priorities(c, _priorities) <= get_priorities(last_in_stack, _priorities):
                 if last_in_stack == '(':
@@ -98,11 +98,10 @@ def remake_to_rev_pol_not(_string: str, _priorities: dict) -> str:
 
                 result_str += stack.pop()
                 last_in_stack = None if not stack else stack[-1]
-            if c != ')':
-                stack.append(c)
+            stack.append(c)
         elif c == ')':                                                  # Если закрывающая скобка, то
             last_in_stack = None if not stack else stack[-1]            # выводим все до открывающей скобки
-            while last_in_stack != '(' or last_in_stack is not None:
+            while last_in_stack != '(' and last_in_stack is not None:
                 result_str += stack.pop()
                 last_in_stack = None if not stack else stack[-1]
             stack.pop()
