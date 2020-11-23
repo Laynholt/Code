@@ -114,6 +114,9 @@ def remake_to_rev_pol_not(_string: str, _priorities: dict) -> list:
                 last_in_stack = None if not stack else stack[-1]
             stack.pop()
 
+    if len(temp_str) != 0:            # Если в конце не было никаких операторов, то проверяем, есть ли операнды в Temp
+        result_list.append(temp_str)  # Заполняем выходной список
+
     while len(stack) != 0:                                              # Если после прохода по строке стек
         last_in_stack = None if not stack else stack[-1]                # еще не пуст, то выводим всё, что осталось
         if last_in_stack != '(':
