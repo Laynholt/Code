@@ -1,5 +1,5 @@
-import itertools
-import re
+from itertools import product
+import xlsxwriter
 
 
 def is_in(symbol: str, _list) -> bool:
@@ -64,7 +64,7 @@ def get_priorities(_operator: str, _priorities: dict) -> int:
     for num, ch in _priorities.items():
         if _operator in ch:
             return num
-    print("Incorrect operator [", _operator, "]! Returned -1.")
+    # print("Incorrect operator [", _operator, "]! Returned -1.")
     return -1
 
 
@@ -128,12 +128,106 @@ def remake_to_rev_pol_not(_string: str, _priorities: dict) -> list:
     return result_list
 
 
+def create_truth_table(rev_pol_not_list: list, _operators: list) -> dict:
+    """
+    Функция, которая создает таблицу истинности для выражения в ОПЗ
+    :param rev_pol_not_list: выражение в ОПЗ
+    :param _operators: операторы в этом выражении
+    :return:
+    """
+
+    table = {}
+    stack = []
+    number_of_actions = len(rev_pol_not_list)
+    number_of_variable = 0
+    name_of_variable = []
+
+    for ch in rev_pol_not_list:                                                 # Считаем количество переменных
+        if ch not in _operators:                                                # А также запоминаем их имена
+            number_of_variable += 1
+            name_of_variable.append(ch)
+
+    var_truth_list = list(product([False, True], repeat=number_of_variable))     # Создастся список кортежей
+    for i in range(number_of_variable):                                          # Считываем по одному столбу
+        temp_list = []                                                           # Записываем в темплист
+        for j in range(pow(2, number_of_variable)):
+            temp_list.append(var_truth_list[j][i])
+        table.update({name_of_variable[i]: temp_list})                           # Добавляем в таблицу с переменной
+
+    for ch in rev_pol_not_list:
+        if ch not in _operators:
+            stack.append(ch)
+        else:
+            if ch == '/' or ch == '~':                              # Если отрицание
+                if len(stack) != 0:                                 # Достаем из стека 1 элемент
+                    var1 = stack.pop()
+                    _l = table[var1]                                # Получаем столбец истинности этого элемента
+
+                    for i in range(pow(2, number_of_variable)):     # Меняем значения в этом столбце на противоположные
+                        _l[i] = not _l[i]
+                    stack.append(f'{ch}{var1}')
+                    name_of_variable.append(f'{ch}{var1}')
+                    table.update({f'{ch}{var1}': _l})                   # Добавляем в таблицу истинности
+            else:
+                if len(stack) > 1:
+                    var1 = stack.pop()
+                    var2 = stack.pop()
+                    _l1 = table[var1]
+                    _l2 = table[var2]
+                    _l = []
+
+                    if ch == '*' or ch == '&':
+                        for i in range(pow(2, number_of_variable)):  # Меняем значения в этом столбце на AND
+                            _l.append(_l1[i] and _l2[i])
+                    elif ch == 'v' or ch == '|':
+                        for i in range(pow(2, number_of_variable)):  # Меняем значения в этом столбце на OR
+                            _l.append(_l1[i] or _l2[i])
+                    elif ch == '+' or '^':
+                        for i in range(pow(2, number_of_variable)):  # Меняем значения в этом столбце на XOR
+                            _l.append(_l1[i] ^ _l2[i])
+                    stack.append(f'({var2} {ch} {var1})')
+                    name_of_variable.append(f'({var2} {ch} {var1})')
+                    table.update({f'({var2} {ch} {var1})': _l})  # Добавляем в таблицу истинности
+
+    # for c in name_of_variable:
+    #     print(c, ': ', table[c])
+    return table
+
+
+def create_excel_file(table: dict, TRUE_FALSE: str):
+    # Create a workbook and add a worksheet.
+    workbook = xlsxwriter.Workbook('TruthTable.xlsx')
+    worksheet = workbook.add_worksheet('TruthTable')
+    cell_format = workbook.add_format({'italic': True, 'bold': True, 'align': 'center'})
+
+    row = col = 0
+    k = 0
+    for variable, data in table.items():
+        worksheet.write(row, col, variable, cell_format)
+        worksheet.set_column(k, k, len(variable) + 2)
+        for i in range(len(data)):
+            row += 1
+            if TRUE_FALSE == '1':
+                worksheet.write(row, col, data[i])
+            elif TRUE_FALSE == '2':
+                worksheet.write(row, col, 1 if data[i] is True else 0)
+        row = 0
+        col += 1
+        k += 1
+
+    workbook.close()
+
+
 def main():
     source_str = input('Enter boolean expression: ').replace(' ', '')
     priority_str = input('Enter priorities: ')
+    choose = input('Show:\n1]True/False\n2]1/2\n->> ')
     p = create_priorities(priority_str)
+    r = remake_to_rev_pol_not(source_str, p)
     print("Priorities: ", p)
-    print("Reverse Pol Notation: ", remake_to_rev_pol_not(source_str, p))
+    print("Reverse Pol Notation: ", r)
+    t = create_truth_table(r, list(priority_str.replace(',', '')))
+    create_excel_file(t, choose)
 
 
 if __name__ == '__main__':
