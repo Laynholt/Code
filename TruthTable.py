@@ -68,7 +68,7 @@ def get_priorities(_operator: str, _priorities: dict) -> int:
     return -1
 
 
-def remake_to_rev_pol_not(_string: str, _priorities: dict) -> str:
+def remake_to_rev_pol_not(_string: str, _priorities: dict) -> list:
     """
     Фукнция для перевода выражения в обратную польскую запись.
     Возвращает строку.
@@ -80,11 +80,17 @@ def remake_to_rev_pol_not(_string: str, _priorities: dict) -> str:
 
     stack = []
     result_str = ''
+    temp_str = ''
+    result_list = []
 
     for c in _string:
+        if is_in(c, _priorities.values()):
+            if len(temp_str) != 0:
+                result_list.append(temp_str)        # Заполняем выходной список
+                temp_str = ''
+
         if not is_in(c, _priorities.values()):     # Если это не символ операции
-            # print(list(c) not in _priorities.values())
-            # print(c, " - ", _priorities.values())
+            temp_str += c
             result_str += c                         # То пишем его в исходную строку
         elif c == '(':                              # Если это открывающая скобка
             stack.append(c)                         # То добавляем ее в стек
@@ -96,24 +102,27 @@ def remake_to_rev_pol_not(_string: str, _priorities: dict) -> str:
                 if last_in_stack == '(':
                     break
 
-                result_str += stack.pop()
+                # result_str += stack.pop()                     # Если нужена строка, то раскомментить это
+                result_list.append(stack.pop())                 # Закомментить это
                 last_in_stack = None if not stack else stack[-1]
             stack.append(c)
         elif c == ')':                                                  # Если закрывающая скобка, то
             last_in_stack = None if not stack else stack[-1]            # выводим все до открывающей скобки
             while last_in_stack != '(' and last_in_stack is not None:
-                result_str += stack.pop()
+                # result_str += stack.pop()                     # Если нужена строка, то раскомментить это
+                result_list.append(stack.pop())                 # Закомментить это
                 last_in_stack = None if not stack else stack[-1]
             stack.pop()
 
     while len(stack) != 0:                                              # Если после прохода по строке стек
         last_in_stack = None if not stack else stack[-1]                # еще не пуст, то выводим всё, что осталось
         if last_in_stack != '(':
-            result_str += stack.pop()
+            # result_str += stack.pop()                     # Если нужена строка, то раскомментить это
+            result_list.append(stack.pop())                 # Закомментить это
         else:
             stack.pop()
 
-    return result_str
+    return result_list
 
 
 def main():
